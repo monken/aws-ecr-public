@@ -2,6 +2,13 @@
 
 Host any Elastic Container Registry (ECR) publicly on a custom domain using this serverless proxy.
 
+Give it a spin:
+
+```bash
+# pull a container from a registry named nginx with no authentication
+docker pull v3iomfy255.execute-api.us-east-2.amazonaws.com/nginx:alpine
+```
+
 ## Solution Overview
 
 ECR doesn't support [public registries](https://aws.amazon.com/ecr/faqs/). Instead, the docker client needs to authenticate with ECR using AWS IAM credentials which requires the AWS CLI or an SDK that can generate those credentials.
@@ -34,7 +41,7 @@ For Route 53, open your hosted zone, create a **New Record Set**, enter the doma
 
 ### How can I restrict access to certain registries?
 
-By default all registries in the account and region will be made publicly available. To limit the number of publicly available repositores, attach a custom policy to the Lambda function role (look for `${AWS::StackName}-LambdaRole-*`). The following policy will restrict public access to the `myapp` repository (make sure you replace the variables with your region and account id).
+By default all registries in the account and region will be made publicly available. To limit the number of publicly available repositores, attach a custom policy to the Lambda execution role (look for `${AWS::StackName}-LambdaRole-*`). The following policy will restrict public access to the `myapp` repository (make sure you replace the variables with your region and account id).
 
 ```json
 {
@@ -67,3 +74,4 @@ make clean # delete CloudFormation stack
 
 * Cross-account and cross-region access to registries
 * Tag-based permissions
+* Implement additional endpoints for listing images and tags
