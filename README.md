@@ -21,7 +21,7 @@ If you would like to make your registries publicly available then this solution 
 
 [![launch](docs/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?#/stacks/create/review?filter=active&templateURL=https%3A%2F%2Fs3.us-east-2.amazonaws.com%2Fmonken%2Faws-ecr-public%2Fv1.0.0%2Ftemplate.json&stackName=ecr-public)
 
-[Download Template](https%3A%2F%2Fs3.us-east-2.amazonaws.com%2Fmonken%2Faws-ecr-public%2Fv1.0.0%2Ftemplate.json)
+[Download Template](https://s3.us-east-2.amazonaws.com/monken/aws-ecr-public/v1.0.0/template.json)
 
 
 ### Template Parameters
