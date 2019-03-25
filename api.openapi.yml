@@ -1,0 +1,44 @@
+swagger: '2.0'
+info:
+  version: '1'
+  title: !Ref AWS::StackName
+host: dummy.execute-api.us-east-1.amazonaws.com
+basePath: /dummy
+schemes: [https]
+
+x-default-request: &request
+  responses:
+    200:
+      description: "200 response"
+      schema:
+        $ref: "#/definitions/Empty"
+  x-amazon-apigateway-request-validator: all
+  x-amazon-apigateway-integration:
+    responses:
+      default:
+        statusCode: 200
+    uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda.Arn}/invocations
+    passthroughBehavior: when_no_match
+    httpMethod: POST
+    type: aws_proxy
+
+paths:
+
+  /:
+    get:
+      <<: *request
+      x-amazon-apigateway-integration:
+        responses:
+          default:
+            statusCode: 200
+        passthroughBehavior: when_no_match
+        requestTemplates:
+          application/json: "{\"statusCode\": 200}"
+        type: mock
+
+
+  /{proxy+}:
+    get:
+      <<: *request
+    head:
+      <<: *request

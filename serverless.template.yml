@@ -1,0 +1,144 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: https://github.com/monken/aws-ecr-public
+
+Parameters:
+  ValidationDomain:
+    Type: String
+    Default: ''
+    Description: Overwrite default Validation Domain for ACM Certificate
+  DomainName:
+    Type: String
+    Default: ''
+    Description: If provided an ACM Certificate and API Domain Name will be created
+
+Conditions:
+  HasValidationDomain: !Not [ !Equals [ !Ref ValidationDomain, '' ] ]
+  HasDomainName: !Not [ !Equals [ !Ref DomainName, '' ] ]
+
+Resources:
+
+  CloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  ApiGatewayRole:
+    Type: AWS::ApiGateway::Account
+    DependsOn: Api
+    Properties:
+      CloudWatchRoleArn: !GetAtt CloudWatchRole.Arn
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /${AWS::StackName}/accesslog
+      RetentionInDays: 7
+
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: v2
+      DefinitionBody: !Include api.openapi.yml
+      EndpointConfiguration: REGIONAL
+      MinimumCompressionSize: 0
+      TracingEnabled: true
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+        Format:
+          # https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html#context-variable-reference
+          Fn::Stringify:
+            requestId: $context.requestId
+            ip: $context.identity.sourceIp
+            caller: $context.identity.caller
+            userArn: $context.identity.userArn
+            requestTimeEpoch: $context.requestTimeEpoch
+            httpMethod: $context.httpMethod
+            resourcePath: $context.resourcePath
+            path: $context.path
+            status: $context.status
+            protocol: $context.protocol
+            responseLength: $context.responseLength
+            responseLatency: $context.responseLatency
+            integrationLatency: $context.integrationLatency
+            error: $context.error
+
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Condition: HasDomainName
+    Properties:
+      DomainName: !Ref DomainName
+      DomainValidationOptions:
+        Fn::If:
+          - HasValidationDomain
+          - - DomainName: !Ref DomainName
+              ValidationDomain: !Ref ValidationDomain
+          - !Ref AWS::NoValue
+
+  ApiDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Condition: HasDomainName
+    Properties:
+      RegionalCertificateArn: !Ref Certificate
+      DomainName: !Ref DomainName
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  BasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Condition: HasDomainName
+    DependsOn: Apiv2Stage
+    Properties:
+      BasePath: v2
+      DomainName: !Ref ApiDomainName
+      RestApiId: !Ref Api
+      Stage: v2
+
+  Lambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs8.10
+      InlineCode: !Include { type: string, location: lambda.js }
+      Timeout: 30
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            RestApiId: !Ref Api
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - ecr:GetDownloadUrlForLayer
+                - ecr:BatchGetImage
+              Resource: '*'
+
+Outputs:
+  ApiDomainName:
+    Value: !Sub ${Api}.execute-api.${AWS::Region}.amazonaws.com
+    Export:
+      Name: !Sub ${AWS::StackName}:ApiDomainName
+  RegionalDomainName:
+    Value: !If [ HasDomainName, !GetAtt ApiDomainName.RegionalDomainName, 'null']
+    Export:
+      Name: !Sub ${AWS::StackName}:RegionalDomainName
+  RegionalHostedZoneId:
+    Value: !If [ HasDomainName, !GetAtt ApiDomainName.RegionalHostedZoneId, 'null']
+    Export:
+      Name: !Sub ${AWS::StackName}:RegionalHostedZoneId
+  LambdaExecutionRoleName:
+    Value: !Ref LambdaRole
+    Export:
+      Name: !Sub ${AWS::StackName}:LambdaExecutionRoleName
