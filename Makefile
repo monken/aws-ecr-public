@@ -8,5 +8,5 @@ test: build
 	aws cloudformation deploy --template-file $(TEMPLATE) --stack-name aws-ecr-public --capabilities CAPABILITY_IAM
 
 clean:
-	rm -rf dist /
+	rm -rf dist
 	aws cloudformation delete-stack --stack-name aws-ecr-public
