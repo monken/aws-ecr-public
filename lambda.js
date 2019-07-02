@@ -4,11 +4,17 @@ const ecr = new AWS.ECR();
 const handledErrors = {
   AccessDeniedException: {
     statusCode: 403,
-    error: { code: "DENIED", message: "requested access to the resource is denied" }
+    error: {
+      code: "DENIED",
+      message: "requested access to the resource is denied"
+    }
   },
   RepositoryNotFoundException: {
     statusCode: 404,
-    error: { code: "NAME_UNKNOWN", message: "repository name not known to registry" }
+    error: {
+      code: "NAME_UNKNOWN",
+      message: "repository name not known to registry"
+    }
   }
 };
 
