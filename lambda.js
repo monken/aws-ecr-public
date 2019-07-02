@@ -28,9 +28,15 @@ const actions = {
       };
     },
     get: async (name, ref) => {
+      if (ref.indexOf("sha256") !== -1) {
+        selectorObj = { imageDigest: ref };
+      } else {
+        selectorObj = { imageTag: ref };
+      }
+
       const { images } = await ecr
         .batchGetImage({
-          imageIds: [{ imageTag: ref }],
+          imageIds: [selectorObj],
           repositoryName: name
         })
         .promise();
