@@ -28,7 +28,10 @@ const actions = {
       };
     },
     get: async (name, ref) => {
-      if (ref.indexOf("sha256") !== -1) {
+      // matching is done according to https://docs.docker.com/registry/spec/api/#content-digests
+      // however the algorithm regex seems broken in their docs
+      // matching to a word should be enough to catch it
+      if (ref.match(/^\w+:[A-Fa-f0-9]+$/)) {
         selectorObj = { imageDigest: ref };
       } else {
         selectorObj = { imageTag: ref };
