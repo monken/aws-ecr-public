@@ -4,11 +4,17 @@ const ecr = new AWS.ECR();
 const handledErrors = {
   AccessDeniedException: {
     statusCode: 403,
-    error: { code: "DENIED", message: "requested access to the resource is denied" }
+    error: {
+      code: "DENIED",
+      message: "requested access to the resource is denied"
+    }
   },
   RepositoryNotFoundException: {
     statusCode: 404,
-    error: { code: "NAME_UNKNOWN", message: "repository name not known to registry" }
+    error: {
+      code: "NAME_UNKNOWN",
+      message: "repository name not known to registry"
+    }
   }
 };
 
@@ -22,9 +28,18 @@ const actions = {
       };
     },
     get: async (name, ref) => {
+      // matching is done according to https://docs.docker.com/registry/spec/api/#content-digests
+      // however the algorithm regex seems broken in their docs
+      // matching to a word should be enough to catch it
+      if (ref.match(/^\w+:[A-Fa-f0-9]+$/)) {
+        selectorObj = { imageDigest: ref };
+      } else {
+        selectorObj = { imageTag: ref };
+      }
+
       const { images } = await ecr
         .batchGetImage({
-          imageIds: [{ imageTag: ref }],
+          imageIds: [selectorObj],
           repositoryName: name
         })
         .promise();
