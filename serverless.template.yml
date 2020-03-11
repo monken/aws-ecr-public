@@ -11,6 +11,11 @@ Parameters:
     Type: String
     Default: ''
     Description: If provided an ACM Certificate and API Domain Name will be created
+  ValidationMethod:
+    Type: String
+    Default: 'EMAIL'
+    AllowedValues: ["EMAIL", "DNS"]
+    Description: If provided an ACM Certificate and API Domain Name will be created
 
 Conditions:
   HasValidationDomain: !Not [ !Equals [ !Ref ValidationDomain, '' ] ]
@@ -76,6 +81,7 @@ Resources:
     Condition: HasDomainName
     Properties:
       DomainName: !Ref DomainName
+      ValidationMethod: !Ref ValidationMethod
       DomainValidationOptions:
         Fn::If:
           - HasValidationDomain

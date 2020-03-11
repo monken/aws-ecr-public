@@ -30,6 +30,7 @@ If you would like to make your registries publicly available then this solution 
 | -- | -- | -- |
 | DomainName | No | If provided an ACM Certificate and API Domain Name will be created
 | ValidationDomain | No | Overwrite default Validation Domain for ACM Certificate
+| ValidationMethod | Yes, *Default: EMAIL* | Allow you to use DNS instead of EMAIL for Certificate validation
 
 ## FAQ
 
