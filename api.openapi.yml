@@ -1,29 +1,39 @@
-swagger: '2.0'
+openapi: '3.0.1'
 info:
   version: '1'
   title: !Ref AWS::StackName
-host: dummy.execute-api.us-east-1.amazonaws.com
-basePath: /dummy
-schemes: [https]
 
 x-default-request: &request
+  security:
+    Fn::If:
+      - HasAuthorizer
+      - [basic: []]
+      - []
   responses:
     200:
       description: "200 response"
-      schema:
-        $ref: "#/definitions/Empty"
-  x-amazon-apigateway-request-validator: all
+      content: {}
   x-amazon-apigateway-integration:
     responses:
       default:
         statusCode: 200
-    uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Lambda.Arn}/invocations
+    uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ApiFunction.Arn}/invocations
     passthroughBehavior: when_no_match
     httpMethod: POST
     type: aws_proxy
 
-paths:
+x-amazon-apigateway-gateway-responses:
+  UNAUTHORIZED:
+    statusCode: 401
+    responseParameters:
+      gatewayresponse.header.WWW-Authenticate: "'Basic'"
+    responseTemplates:
+      application/json:
+        Fn::Stringify:
+          errors:
+            - code: UNAUTHORIZED
 
+paths:
   /:
     get:
       <<: *request
@@ -36,9 +46,26 @@ paths:
           application/json: "{\"statusCode\": 200}"
         type: mock
 
-
   /{proxy+}:
     get:
       <<: *request
     head:
       <<: *request
+
+components:
+  securitySchemes:
+    Fn::If:
+      - HasAuthorizer
+      - basic:
+          type: apiKey
+          name: Authorization
+          in: header
+          x-amazon-apigateway-authtype: custom
+          x-amazon-apigateway-authorizer:
+            authorizerUri:
+              Fn::Sub:
+                - arn:aws:apigateway:us-east-2:lambda:path/2015-03-31/functions/${AuthorizerLambdaArn}/invocations
+                - AuthorizerLambdaArn: !If [ HasCustomAuthorizer, !Ref AuthCustomLambdaArn, !GetAtt AuthorizerFunction.Arn ]
+            authorizerResultTtlInSeconds: 300
+            type: token
+      - !Ref AWS::NoValue

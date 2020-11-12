@@ -19,9 +19,9 @@ If you would like to make your registries publicly available then this solution 
 
 ## Deploy
 
-[![launch](docs/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?#/stacks/create/review?filter=active&templateURL=https%3A%2F%2Fs3.us-east-2.amazonaws.com%2Fmonken%2Faws-ecr-public%2Fv1.1.1%2Ftemplate.json&stackName=ecr-public)
+[![launch](docs/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?#/stacks/create/review?filter=active&templateURL=https%3A%2F%2Fs3.us-east-2.amazonaws.com%2Fmonken%2Faws-ecr-public%2Fv1.2.0%2Ftemplate.json&stackName=ecr-public)
 
-[Download Template](https://s3.us-east-2.amazonaws.com/monken/aws-ecr-public/v1.1.1/template.json)
+[Download Template](https://s3.us-east-2.amazonaws.com/monken/aws-ecr-public/v1.2.0/template.json)
 
 
 ### Template Parameters
@@ -30,7 +30,28 @@ If you would like to make your registries publicly available then this solution 
 | -- | -- | -- |
 | DomainName | No | If provided an ACM Certificate and API Domain Name will be created
 | ValidationDomain | No | Overwrite default Validation Domain for ACM Certificate
-| ValidationMethod | Yes, *Default: EMAIL* | Allow you to use DNS instead of EMAIL for Certificate validation
+| ValidationMethod | Yes, default to `EMAIL` | Allow you to use `DNS` instead of `EMAIL` for Certificate validation
+| Authorizer | No, defaults to `NONE` | Valid values are `NONE`, `BASIC`, `AZURE_DEVOPS` or `CUSTOM`
+| AuthBasicUsername | If Authorizer is `BASIC` | Username for Basic authentication
+| AuthBasicPassword | If Authorizer is `BASIC` | Password for Basic authentication
+| AuthAzureDevOpsOrg | If Authorizer is `AZURE_DEVOPS` | Organization name in Azure Devops
+| AuthCustomLambdaArn | If Authorizer is `CUSTOM` | ARN of your custom Lambda authorizer
+
+## Authorizers
+
+This template ships with support for Basic authentication, Azure Devops (using system or access token) and custom Lambda.
+
+Azure DevOps Pipeline example:
+
+```yaml
+# username must be ADO
+steps:
+- script: |
+    echo $TOKEN | docker login --username ADO --password-stdin example.execute-api.us-east-2.amazonaws.com
+    docker pull example.execute-api.us-east-2.amazonaws.com/nginx:latest
+  env:
+    TOKEN: $(System.AccessToken)
+```
 
 ## FAQ
 
