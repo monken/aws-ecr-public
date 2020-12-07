@@ -64,7 +64,7 @@ components:
           x-amazon-apigateway-authorizer:
             authorizerUri:
               Fn::Sub:
-                - arn:aws:apigateway:us-east-2:lambda:path/2015-03-31/functions/${AuthorizerLambdaArn}/invocations
+                - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthorizerLambdaArn}/invocations
                 - AuthorizerLambdaArn: !If [ HasCustomAuthorizer, !Ref AuthCustomLambdaArn, !GetAtt AuthorizerFunction.Arn ]
             authorizerResultTtlInSeconds: 300
             type: token
